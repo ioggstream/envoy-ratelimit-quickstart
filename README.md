@@ -1,44 +1,39 @@
-# Kong in Docker Compose
+# Envoy-proxy in Docker Compose
 
-A docker compose derived from the official one, but actually unofficial :)
-with the Kong nightly build containing the preview ratelimit I-D implementation.
+A docker compose running envoy-proxy with the global ratelimiter enabled.
 
-You can manage this Kong setup via the Konga container. See Konga for further infos.
+This is derived from the following 
+[envoy docs](https://www.envoyproxy.io/docs/envoy/latest/start/sandboxes/front_proxy.html)
 
-# What is Kong?
+## Run
 
-You can find the official Docker distribution for Kong at [https://store.docker.com/images/kong](https://store.docker.com/images/kong).
+Just 
 
-# How to use this template
-
-This Docker Compose template provisions a Kong container with a Postgres database, plus a nginx load-balancer and Consul for service discovery. After running the template, the `nginx-lb` load-balancer will be the entrypoint to Kong.
-
-To run this template execute:
-
-```shell
-$ docker-compose up
+```
+docker-compose up -d 
 ```
 
-To scale Kong (ie, to three instances) execute:
 
-```shell
-$ docker-compose scale kong=3
+Test
+
+```
+curl http://localhost:8080/service/1
 ```
 
-Kong will be available through the `nginx-lb` instance on port `8000`, `8443` and `8001`. You can customize the template with your own environment variables or datastore configuration.
+results in a response with ratelimit-headers.
 
-Kong's documentation can be found at [getkong.org/docs][kong-docs-url].
+```
+$ curl http://localhost:8080/service/1 -i
+HTTP/1.1 200 OK
+content-type: text/html; charset=utf-8
+content-length: 92
+server: envoy
+date: Fri, 07 Aug 2020 13:57:11 GMT
+x-envoy-upstream-service-time: 1
+x-ratelimit-limit: 50, 50;w=60
+x-ratelimit-remaining: 48
+x-ratelimit-reset: 0
 
-## Issues
+Hello from behind Envoy (service 1)! hostname: ac2ef78fcf98 resolvedhostname: 192.168.240.5
 
-If you have any problems with or questions about this image, please contact us through a [GitHub issue][github-new-issue].
-
-## Contributing
-
-You are invited to contribute new features, fixes, or updates, large or small; we are always thrilled to receive pull requests, and do our best to process them as fast as we can.
-
-Before you start to code, we recommend discussing your plans through a [GitHub issue][github-new-issue], especially for more ambitious contributions. This gives other contributors a chance to point you in the right direction, give you feedback on your design, and help you find out if someone else is working on the same thing.
-
-[kong-site-url]: http://getkong.org
-[kong-docs-url]: http://getkong.org/docs
-[github-new-issue]: https://github.com/Mashape/docker-kong/issues/new
+```
